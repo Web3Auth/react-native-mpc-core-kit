@@ -52,8 +52,8 @@ const handleStorageRequest = async (data: MessageRequest) => {
   if (action === StorageAction.setItem) {
     const { key, value, instanceId } = payload;
     try {
-      if (!storageMap[instanceId]) { throw new Error('storage instance not found'); }
-      await storageMap[instanceId].setItem(key, value);
+      if (storageMap[instanceId] === undefined) { throw new Error('storage instance not found'); }
+      await storageMap[instanceId]?.setItem(key, value);
       bridgeEmit({
         type: MessageType.TssLibResponse,
         data: {

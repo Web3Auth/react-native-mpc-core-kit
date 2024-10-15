@@ -85,7 +85,7 @@ function createMPCCoreKitInstance(options: Web3AuthOptions) {
 
   debug(modOptions);
   debug( memoryStorage);
-  const corekitInstance = new Web3AuthMPCCoreKit(options);
+  const corekitInstance = new Web3AuthMPCCoreKit(modOptions);
   return corekitInstance;
 }
 
