@@ -1,0 +1,65 @@
+{
+  "name": "@web3auth/react-native-mpc-core-kit",
+  "version": "0.1.0",
+  "description": "",
+  "types": "dist/index.d.ts",
+  "ts": "src/index.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "react-native": "src/index",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "release": "torus-scripts release",
+    "pre-commit": "lint-staged --cwd .",
+    "lint": "eslint --fix 'src/**/*.ts'",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc -p . --noEmit",
+    "build": "rollup -c ",
+    "prepack": "npm run build"
+  },
+  "lint-staged": {
+    "*.{json,md}": [
+      "prettier --write"
+    ],
+    "*.{js,ts}": "eslint --cache --fix"
+  },
+  "keywords": [],
+  "author": "Web3Auth",
+  "license": "BSD",
+  "dependencies": {
+    "@web3auth/mpc-core-kit": "^3.2.4",
+    "@toruslabs/tss-dkls-lib": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.22.11",
+    "@babel/preset-env": "7.22.14",
+    "@babel/traverse": "7.22.11",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-typescript": "11.1.5",
+    "@toruslabs/torus-scripts": "^5.1.0",
+    "@types/node": "20.10.1",
+    "@types/react": "^18.2.42",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-native": "^0.75.2",
+    "react-native-react-bridge": "^0.12.1",
+    "react-native-webview": "^13.6.3",
+    "loglevel": "1.9.2",
+    "rimraf": "5.0.5",
+    "rollup": "4.7.0",
+    "ts-jest": "29.1.1",
+    "tslib": "2.6.2",
+    "typescript": "5.0.4"
+  },
+  "peerDependencies": {
+    "loglevel": ">=1.0.0, <2.0.0",
+    "@toruslabs/eccrypto": ">=5.0.0, <6.0.0",
+    "react-native-react-bridge": ">=0.12.1, <0.13.0",
+    "react-native-webview": ">=13.6.0, <14.0.0"
+  }
+}
