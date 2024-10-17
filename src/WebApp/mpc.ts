@@ -74,13 +74,23 @@ export async function handleMPCCoreKitRequest(
       return { ruid, action, result: { result, status: corekitInstance.status , state: corekitInstance.state} };
     }
 
+    if (action === CoreKitAction._UNSAFE_resetAccount) {
+      await corekitInstance.tKey.storageLayer.setMetadata({
+        privKey: new BN(corekitInstance.state.postBoxKey!, 'hex'),
+        input: {message: 'KEY_NOT_FOUND'},
+      });
+      await corekitInstance.logout();
+
+      return { ruid, action, result: { status: corekitInstance.status , state: corekitInstance.state} };
+    }
+
     if (action === CoreKitAction.getDeviceFactor) {
       let result = await corekitInstance.getDeviceFactor();
       return { ruid, action, result: { result, status: corekitInstance.status , state: corekitInstance.state} };
     }
     if (action === CoreKitAction.setDeviceFactor) {
-      const {factorkey, replace} = payload;
-      await corekitInstance.setDeviceFactor( new BN(factorkey, 'hex') , replace );
+      const {factorKey, replace} = payload;
+      await corekitInstance.setDeviceFactor( new BN(factorKey, 'hex') , replace );
       return { ruid, action, result: { status: corekitInstance.status , state: corekitInstance.state} };
     }
 

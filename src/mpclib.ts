@@ -1,8 +1,8 @@
 import { generatePrivate } from '@toruslabs/eccrypto';
 import { bridgeEmit } from './Bridge';
-import { copyBuffer, CoreKitAction, CoreKitRequestType } from './common';
+import { copyBuffer, CoreKitAction, BrigeToWebViewMessageType } from './common';
 import { rejectMap, resolveMap, storageMap } from './Bridge';
-import {   COREKIT_STATUS, CoreKitSigner, CreateFactorParams,   EnableMFAParams,    IFactorKey,   InitParams,  JWTLoginParams,  MPCKeyDetails,  OAuthLoginParams,  UserInfo,  Web3AuthOptions, Web3AuthState   } from '@web3auth/mpc-core-kit';
+import {   COREKIT_STATUS, CoreKitSigner, CreateFactorParams,   EnableMFAParams, IFactorKey,   InitParams,  JWTLoginParams,  MPCKeyDetails,  OAuthLoginParams,  UserInfo,  Web3AuthOptions, Web3AuthState   } from '@web3auth/mpc-core-kit';
 import { KeyType, Point } from '@tkey/common-types';
 import BN from 'bn.js';
 
@@ -13,7 +13,7 @@ export async function createInstance( options: Web3AuthOptions): Promise<string>
 
     const action = CoreKitAction.createInstance;
     bridgeEmit({
-      type: CoreKitRequestType.CoreKitRequest,
+      type: BrigeToWebViewMessageType.CoreKitRequest,
       data: { ruid, action, payload: { options } },
     });
 
@@ -27,7 +27,7 @@ export async function createInstance( options: Web3AuthOptions): Promise<string>
 const genericCoreKitRequestWrapper = async <P,T>(action: CoreKitAction, payload: P) : Promise<T> => {
   let ruid = generatePrivate().toString('hex');
   bridgeEmit({
-    type: CoreKitRequestType.CoreKitRequest,
+    type: BrigeToWebViewMessageType.CoreKitRequest,
     data: { ruid, action, payload },
   });
   const result = await new Promise((resolve, reject) => {
@@ -43,12 +43,12 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
 
   private ruid? : string;
 
-
   private _status : COREKIT_STATUS;
 
   keyType: KeyType;
 
   public state: Web3AuthState = { accountIndex: 0 };
+
 
 
   /**
@@ -128,12 +128,14 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
 
+
   public async logout(): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.logout, {});
+    await this.genericRequestWithStateUpdate(CoreKitAction.logout, {});
   }
 
   public getCurrentFactorKey(): IFactorKey {
     if (!this.state.factorKey || !this.state.tssShareIndex) {throw new Error('Factor key not available');}
+    console.log(this.state);
     return {
       factorKey: this.state.factorKey,
       shareType: this.state.tssShareIndex,
@@ -148,6 +150,13 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   public async _UNSAFE_exportTssKey(): Promise<string> {
     return this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_exportTssKey, {});
   }
+/*************  ✨ Codeium Command ⭐  *************/
+  /**
+   * Exports the TSS Ed25519 seed, if available.
+   * This is a sensitive operation and should not be used in production.
+   * @returns The Ed25519 seed as a Buffer.
+   */
+/******  c1d79431-9081-419d-9a79-fe8f76a991ff  *******/
   public async _UNSAFE_exportTssEd25519Seed(): Promise<Buffer> {
     const buf: Buffer = await this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_exportTssEd25519Seed, {});
     return copyBuffer(buf);
@@ -158,7 +167,7 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async setDeviceFactor(factorKey: BN, replace = false): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.getDeviceFactor, { factorKey, replace});
+    return this.genericRequestWithStateUpdate(CoreKitAction.setDeviceFactor, { factorKey, replace});
   }
 
   public async setManualSync(manualSync: boolean): Promise<void> {
@@ -178,4 +187,7 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
     return this.genericRequestWithStateUpdate(CoreKitAction.getKeyDetails, {});
   }
 
+  public async _UNSAFE_resetAccount(): Promise<void> {
+    return this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_resetAccount, {});
+  }
 }

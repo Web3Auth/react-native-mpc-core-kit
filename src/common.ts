@@ -17,14 +17,14 @@ export enum TssLibAction {
   JsReadMsgDone = 'js_read_msg_done',
 }
 
-export enum TssLibMessageType {
-  TssLibRequest = 'tssLibRequest',
-  TssLibResponse = 'tssLibResponse',
+export enum BrigeToRNMessageType {
+  CoreKitResponse = 'coreKitResponse',
+  StorageRequest = 'storageRequest',
 }
 
-export enum CoreKitRequestType {
+export enum BrigeToWebViewMessageType {
   CoreKitRequest = 'coreKitRequest',
-  StorageRequest = 'storageRequest',
+  StorageResponse = 'storageRespond',
 }
 
 export type MessageResponse = {
@@ -60,6 +60,7 @@ export enum CoreKitAction {
   logout = 'logout',
   _UNSAFE_exportTssKey = '_UNSAFE_exportTssKey',
   _UNSAFE_exportTssEd25519Seed = '_UNSAFE_exportTssEd25519Seed',
+  _UNSAFE_resetAccount = '_UNSAFE_resetAccount',
   getCurrentFactorKey = 'get_current_factor_key',
   getUserInfo = 'get_user_info',
   getKeyDetails = 'get_key_details',

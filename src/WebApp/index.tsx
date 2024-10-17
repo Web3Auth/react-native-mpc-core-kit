@@ -7,18 +7,17 @@ import {
 import TssLibv4 from '@toruslabs/tss-dkls-lib';
 
 import {
-  TssLibAction,
   type MessageResponse,
   type MessageRequest,
-  TssLibMessageType,
+  BrigeToWebViewMessageType,
   LibError,
-  CoreKitRequestType,
   CoreKitAction,
-  // CoreKitRequestType,
-  // CoreKitAction,
+  BrigeToRNMessageType,
+  StorageAction,
 } from '../common';
 import { IAsyncStorage, Web3AuthMPCCoreKit, Web3AuthOptions } from '@web3auth/mpc-core-kit';
 import { handleMPCCoreKitRequest } from './mpc';
+import { generatePrivate } from '@toruslabs/eccrypto';
 
 const style = {
   width: '100vw',
@@ -30,7 +29,7 @@ const style = {
 let bridgeEmit: any;
 bridgeEmit = emit;
 
-const debug = (data: any) => {
+export const debug = (data: any) => {
   bridgeEmit({
     type: 'debug',
     data,
@@ -43,48 +42,87 @@ const error = (data: LibError) => {
   });
 };
 
-let resolverMap = new Map();
-const rec : Record<string, string> = {};
-const memoryStorage : IAsyncStorage= {
-  getItem: async(key: string) => {
-    const value = rec[key];
-    if (value === undefined) { return null }
-    return value
-  },
-  setItem: async(key: string, value: string) => {
-    rec[key] = value;
-  },
-};
+let resolverMap = new Map<string, any>();
+let rejectMap = new Map<string, any>();
 
+// const rec : Record<string, string> = {};
+const createStorageInstance = ( tag: string ) =>{
+
+  const memoryStorage : IAsyncStorage = {
+
+    getItem: async(key: string) => {
+      // const value = rec[key];
+      // if (value === undefined) { return null; }
+      debug('getting async storage data');
+
+      let ruid = generatePrivate().toString('hex');
+      let action = StorageAction.getItem;
+      let payload = { key , instanceId: tag };
+      emit({ type: BrigeToRNMessageType.StorageRequest , data: { ruid, action, payload } });
+
+      // todo add timeout to fail
+      const getItemPromise : Promise<string|null> = new Promise( (resolve, reject) => {
+        resolverMap.set(ruid, resolve);
+        rejectMap.set(ruid, reject);
+      });
+
+      return getItemPromise;
+    },
+    setItem: async(key: string, value: string) => {
+      // rec[key] = value;
+      // const value = rec[key];
+
+      let ruid = generatePrivate().toString('hex');
+      let action = StorageAction.setItem;
+      let payload = { key , value, instanceId: tag  };
+      emit({ type: BrigeToRNMessageType.StorageRequest , data: { ruid, action, payload } });
+
+      // todo add timeout to fail
+      await new Promise( (resolve, reject) => {
+        resolverMap.set(ruid, resolve);
+        rejectMap.set(ruid, reject);
+      });
+    },
+  };
+
+  return memoryStorage;
+};
 
 async function handleResponse(
   data: MessageResponse,
 ): Promise<MessageResponse> {
-  const { action, result, ruid } = data;
-  if (action === TssLibAction.JsSendMsg) {
-    resolverMap.get(ruid + '-js_send_msg')(result);
-    resolverMap.delete(ruid + '-js_send_msg');
-    console.log('js_send_msg resolved', result);
+  const { action, result, ruid , error : msgerror} = data;
+
+  debug(data);
+
+  if (msgerror) {
+    throw new Error(msgerror);
+  }
+
+  if (action === StorageAction.getItem) {
+    resolverMap.get(ruid)(result);
+    resolverMap.delete(ruid);
     return { ruid, action, result: 'done' };
   }
-  if (action === TssLibAction.JsReadMsg) {
-    resolverMap.get(ruid + '-js_read_msg')(result);
-    resolverMap.delete(ruid + '-js_read_msg');
+  if (action === StorageAction.setItem) {
+    resolverMap.get(ruid)(result);
+    resolverMap.delete(ruid);
     return { ruid, action, result: 'done' };
   }
+
   throw { ruid, action, result: 'done' };
 }
 
-function createMPCCoreKitInstance(options: Web3AuthOptions) {
+function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
   debug(options);
   const modOptions : Web3AuthOptions = {
     ...options,
     tssLib: TssLibv4,
-    storage: memoryStorage,
+    storage: createStorageInstance(ruid),
   };
 
   debug(modOptions);
-  debug( memoryStorage);
+  // debug( memoryStorage);
   const corekitInstance = new Web3AuthMPCCoreKit(modOptions);
   return corekitInstance;
 }
@@ -95,8 +133,7 @@ const Root = () => {
   const coreKitRef = useRef<Web3AuthMPCCoreKit>(corekitInstanceGLobal);
   useEffect(() => {
       const init = async () => {
-        debug('initializing113456789012a3');
-        debug('initialized');
+        debug('initialized 1111111');
       };
 
       // handle error
@@ -107,7 +144,7 @@ const Root = () => {
 
   useNativeMessage(async (message: { type: string; data: any }) => {
 
-    if (message.type === TssLibMessageType.TssLibResponse) {
+    if (message.type === BrigeToWebViewMessageType.StorageResponse) {
       try {
         await handleResponse(message.data);
       } catch (e) {
@@ -120,23 +157,22 @@ const Root = () => {
       }
     }
 
-    if (message.type === CoreKitRequestType.CoreKitRequest) {
+    if (message.type === BrigeToWebViewMessageType.CoreKitRequest) {
       debug({ type: 'corekit request', message });
         // debug(corekitInstance);
       const corekitInstance = coreKitRef.current;
       try {
         const { action, payload, ruid } = message.data as MessageRequest;
-        debug(payload);
         if ( action === CoreKitAction.createInstance) {
           debug('creating mpc instance 1235678');
-          coreKitRef.current = createMPCCoreKitInstance(payload.options);
+          coreKitRef.current = createMPCCoreKitInstance(payload.options, ruid);
           debug({msg: 'created mpc instance ', ruid});
-          emit({ type: CoreKitRequestType.CoreKitRequest, data: { ruid, action, result: ruid } });
+          emit({ type: BrigeToRNMessageType.CoreKitResponse, data: { ruid, action, result: ruid } });
           return;
         }
 
         const result = await handleMPCCoreKitRequest(message.data, corekitInstance);
-        emit({ type: CoreKitRequestType.CoreKitRequest, data: result });
+        emit({ type: BrigeToRNMessageType.CoreKitResponse, data: result });
       } catch (e) {
         debug({ type: 'mpcCoreKit request error', e });
         error({

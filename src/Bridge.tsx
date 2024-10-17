@@ -7,10 +7,10 @@ import { View, StyleSheet } from 'react-native';
 import {
   type MessageResponse,
   type MessageRequest,
-  TssLibMessageType as MessageType,
   LibError,
   StorageAction,
-  CoreKitRequestType,
+  BrigeToWebViewMessageType,
+  BrigeToRNMessageType,
 } from './common';
 import log, {LogLevelDesc} from 'loglevel';
 import { IAsyncStorage, IStorage } from '@web3auth/mpc-core-kit';
@@ -24,7 +24,7 @@ export const rejectMap = new Map<string, any>();
 export const storageMap: Record<string, IAsyncStorage | IStorage> = {};
 
 // resolve promise on response
-const handleTssLibResponse = (data: MessageResponse) => {
+const handleCoreKitResponse = (data: MessageResponse) => {
   const { ruid, action, result } = data;
   console.log('tssLib Result', ruid, action, result);
   const key = ruid + action;
@@ -49,40 +49,42 @@ const handleTssLibError = (data: MessageResponse) => {
 
 const handleStorageRequest = async (data: MessageRequest) => {
   const { ruid, action, payload } = data;
-  if (action === StorageAction.setItem) {
-    const { key, value, instanceId } = payload;
-    try {
+  log.debug('storage handler', data);
+  try {
+    if (action === StorageAction.setItem) {
+      const { key, value, instanceId } = payload;
+      log.debug(key, value, instanceId);
       if (storageMap[instanceId] === undefined) { throw new Error('storage instance not found'); }
       await storageMap[instanceId]?.setItem(key, value);
       bridgeEmit({
-        type: MessageType.TssLibResponse,
+        type: BrigeToWebViewMessageType.StorageResponse,
         data: {
           ruid,
           action,
           result: 'done',
         },
       });
-    } catch (e) {
+    } else if (action === StorageAction.getItem) {
+      const { key, instanceId } = payload;
+      const result = await storageMap[instanceId]?.getItem(key);
       bridgeEmit({
-        type: MessageType.TssLibResponse,
+        type: BrigeToWebViewMessageType.StorageResponse,
         data: {
           ruid,
           action,
-          error: e,
+          result,
         },
       });
+    } else {
+      throw new Error( `invalid action type ${action}`);
     }
-  }
-
-  if (action === StorageAction.getItem) {
-    const { key, instanceId } = payload;
-    const result = await storageMap[instanceId]?.getItem(key);
+  } catch (e) {
     bridgeEmit({
-      type: MessageType.TssLibResponse,
+      type: BrigeToWebViewMessageType.StorageResponse,
       data: {
         ruid,
         action,
-        result,
+        error: e,
       },
     });
   }
@@ -104,11 +106,12 @@ export const Bridge = ( params: {logLevel?: LogLevelDesc , resolveReady: (value:
       params.resolveReady(true);
     }
 
-    if (message.type === CoreKitRequestType.CoreKitRequest) {
-      handleTssLibResponse(message.data as MessageRequest);
+    if (message.type === BrigeToRNMessageType.CoreKitResponse) {
+      handleCoreKitResponse(message.data as MessageRequest);
     }
 
-    if (message.type === CoreKitRequestType.StorageRequest) {
+    if (message.type === BrigeToRNMessageType.StorageRequest) {
+      log.debug('Storege request rn');
       await handleStorageRequest(message.data as MessageRequest);
     }
 
