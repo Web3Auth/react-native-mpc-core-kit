@@ -70,6 +70,9 @@ export enum CoreKitAction {
   setManualSync = 'set_manual_sync',
   setTssWalletIndex = 'set_tss_wallet_index',
   getTssFactorPub = 'get_tss_factor_pub',
+
+  getPubKeyEd25519 = 'get_pub_key_ed25519',
+  getPubKeyPoint = 'get_pub_key_point',
 }
 
 export enum StorageAction {

@@ -5,6 +5,7 @@ import {
   webViewCreateRoot,
 } from 'react-native-react-bridge/lib/web';
 import TssLibv4 from '@toruslabs/tss-dkls-lib';
+import TssFrost from '@toruslabs/tss-frost-lib';
 
 import {
   type MessageResponse,
@@ -115,9 +116,10 @@ async function handleResponse(
 
 function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
   debug(options);
+
   const modOptions : Web3AuthOptions = {
     ...options,
-    tssLib: TssLibv4,
+    tssLib: options.tssLib.keyType === TssFrost.keyType ? TssFrost : TssLibv4,
     storage: createStorageInstance(ruid),
   };
 

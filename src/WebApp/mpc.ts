@@ -112,5 +112,17 @@ export async function handleMPCCoreKitRequest(
       const result = corekitInstance.getKeyDetails();
       return { ruid, action, result: { result, status: corekitInstance.status , state: corekitInstance.state} };
     }
-    return { ruid, action, result: 'unknown action' };
+
+    if (action === CoreKitAction.getPubKeyPoint) {
+      const result = corekitInstance.getPubKeyPoint();
+      return { ruid, action, result: { result, status: corekitInstance.status , state: corekitInstance.state} };
+    }
+
+    if (action === CoreKitAction.getPubKeyEd25519) {
+      const result = corekitInstance.getPubKeyEd25519();
+      return { ruid, action, result: { result, status: corekitInstance.status , state: corekitInstance.state} };
+    }
+
+    throw new Error ('unknown action');
+    // return { ruid, action, result: 'unknown action', error: 'unknown action' };
   }

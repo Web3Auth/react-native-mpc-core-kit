@@ -63,7 +63,7 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
 
   constructor( options: Web3AuthOptions) {
     this.options = options;
-    this.keyType = options.tssLib.keyType;
+    this.keyType = options.tssLib.keyType as KeyType;
     this._status = COREKIT_STATUS.NOT_INITIALIZED;
     this.ruid = undefined;
   }
@@ -189,5 +189,21 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
 
   public async _UNSAFE_resetAccount(): Promise<void> {
     return this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_resetAccount, {});
+  }
+
+  /**
+   * Get public key point.
+   */
+  public async getPubKeyPoint(): Promise<Point> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.getPubKeyPoint, {});
+  }
+
+  /**
+   * Get public key in ed25519 format.
+   *
+   * Throws an error if keytype is not compatible with ed25519.
+   */
+  public async getPubKeyEd25519(): Promise<Buffer> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.getPubKeyEd25519, {});
   }
 }
