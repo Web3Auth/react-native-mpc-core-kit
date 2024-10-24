@@ -26,14 +26,14 @@ export const storageMap: Record<string, IAsyncStorage | IStorage> = {};
 // resolve promise on response
 const handleCoreKitResponse = (data: MessageResponse) => {
   const { ruid, action, result } = data;
-  console.log('tssLib Result', ruid, action, result);
+  log.debug('mpcLib Result', ruid, action, result);
   const key = ruid + action;
   if (resolveMap.has(key)) {
     rejectMap.delete(key);
     resolveMap.get(key)(result);
     resolveMap.delete(key);
   } else {
-    console.log('tssLib', 'no resolver', key);
+    log.error('mpcLib', 'no resolver', key);
   }
 };
 
@@ -94,7 +94,6 @@ const handleStorageRequest = async (data: MessageRequest) => {
 export const Bridge = ( params: {logLevel?: LogLevelDesc , resolveReady: (value: boolean ) => void } ) => {
   useEffect(() => {
     log.setLevel(params.logLevel || 'info');
-    log.debug('Bridge init happend here!!!!');
   },[params.logLevel]);
 
   // useWebViewMessage hook create props for WebView and handle communication
@@ -124,7 +123,7 @@ export const Bridge = ( params: {logLevel?: LogLevelDesc , resolveReady: (value:
       }
     }
     if (message.type === 'state') {
-      log.debug('tsslibInit', message.data);
+      log.debug('mpcLibInit', message.data);
     }
   });
   bridgeEmit = emit;

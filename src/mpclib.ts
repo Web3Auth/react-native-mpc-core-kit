@@ -69,7 +69,8 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async genericRequestWithStateUpdate <P,T>(action: CoreKitAction, payload: P) : Promise<T>{
-    const result : {result : T, status: COREKIT_STATUS, state: Web3AuthState} = await genericCoreKitRequestWrapper( action, payload);
+    const overloadPayload = {...payload, instanceId: this.ruid}
+    const result : {result : T, status: COREKIT_STATUS, state: Web3AuthState} = await genericCoreKitRequestWrapper( action, overloadPayload);
     this.state = result.state;
     this._status = result.status;
     return result.result;
@@ -89,13 +90,10 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async init(params?: InitParams): Promise<void> {
-    console.log('init in progress', this.ruid);
-    console.log('bridgeEmit', bridgeEmit);
     if (!this.ruid) {
       const ruid = await createInstance(this.options);
       this.ruid = ruid;
     }
-    console.log('create done');
     return this.genericRequestWithStateUpdate(CoreKitAction.Init, {params});
   }
 
@@ -127,8 +125,6 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
     return this.genericRequestWithStateUpdate(CoreKitAction.commitChanges, {});
   }
 
-
-
   public async logout(): Promise<void> {
     await this.genericRequestWithStateUpdate(CoreKitAction.logout, {});
   }
@@ -150,13 +146,11 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   public async _UNSAFE_exportTssKey(): Promise<string> {
     return this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_exportTssKey, {});
   }
-/*************  ✨ Codeium Command ⭐  *************/
   /**
    * Exports the TSS Ed25519 seed, if available.
    * This is a sensitive operation and should not be used in production.
    * @returns The Ed25519 seed as a Buffer.
    */
-/******  c1d79431-9081-419d-9a79-fe8f76a991ff  *******/
   public async _UNSAFE_exportTssEd25519Seed(): Promise<Buffer> {
     const buf: Buffer = await this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_exportTssEd25519Seed, {});
     return copyBuffer(buf);

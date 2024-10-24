@@ -1,4 +1,4 @@
-import React, { useEffect, useRef} from 'react';
+import React, { useEffect } from 'react';
 import {
   emit,
   useNativeMessage,
@@ -93,9 +93,6 @@ async function handleResponse(
   data: MessageResponse,
 ): Promise<MessageResponse> {
   const { action, result, ruid , error : msgerror} = data;
-
-  debug(data);
-
   if (msgerror) {
     throw new Error(msgerror);
   }
@@ -114,6 +111,9 @@ async function handleResponse(
   throw { ruid, action, result: 'done' };
 }
 
+const corekitInstanceMap = new Map<string, Web3AuthMPCCoreKit>();
+
+
 function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
   debug(options);
 
@@ -122,17 +122,11 @@ function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
     tssLib: options.tssLib.keyType === TssFrost.keyType ? TssFrost : TssLibv4,
     storage: createStorageInstance(ruid),
   };
-
-  debug(modOptions);
-  // debug( memoryStorage);
   const corekitInstance = new Web3AuthMPCCoreKit(modOptions);
   return corekitInstance;
 }
 
-let corekitInstanceGLobal: Web3AuthMPCCoreKit;
-
 const Root = () => {
-  const coreKitRef = useRef<Web3AuthMPCCoreKit>(corekitInstanceGLobal);
   useEffect(() => {
       const init = async () => {
         debug('initialized 1111111');
@@ -161,22 +155,30 @@ const Root = () => {
 
     if (message.type === BrigeToWebViewMessageType.CoreKitRequest) {
       debug({ type: 'corekit request', message });
-        // debug(corekitInstance);
-      const corekitInstance = coreKitRef.current;
       try {
         const { action, payload, ruid } = message.data as MessageRequest;
-        if ( action === CoreKitAction.createInstance) {
-          debug('creating mpc instance 1235678');
-          coreKitRef.current = createMPCCoreKitInstance(payload.options, ruid);
+
+        let coreKitInstance = corekitInstanceMap.get(payload.instanceId);
+
+        if ( action === CoreKitAction.createInstance && coreKitInstance === undefined) {
+          coreKitInstance = createMPCCoreKitInstance(payload.options, ruid);
+          corekitInstanceMap.set(ruid, coreKitInstance)
           debug({msg: 'created mpc instance ', ruid});
           emit({ type: BrigeToRNMessageType.CoreKitResponse, data: { ruid, action, result: ruid } });
           return;
         }
+        if (coreKitInstance === undefined) {
+          throw new Error('coreKitInstance not found');
+        }
 
-        const result = await handleMPCCoreKitRequest(message.data, corekitInstance);
+        const result = await handleMPCCoreKitRequest(message.data, coreKitInstance);
+        if (message.data.payload.action === CoreKitAction.logout) {
+          if (message.data.payload.instanceId) {
+            corekitInstanceMap.delete(message.data.payload.instanceId);
+          }
+        }
         emit({ type: BrigeToRNMessageType.CoreKitResponse, data: result });
       } catch (e) {
-        debug({ type: 'mpcCoreKit request error', e });
         error({
           msg: `${message.type} error`,
           payload: message.data,
