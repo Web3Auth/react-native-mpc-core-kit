@@ -69,6 +69,9 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async genericRequestWithStateUpdate <P,T>(action: CoreKitAction, payload: P) : Promise<T>{
+    if (!this.ruid) {
+      throw new Error('Please initalize first not set');
+    }
     const overloadPayload = {...payload, instanceId: this.ruid}
     const result : {result : T, status: COREKIT_STATUS, state: Web3AuthState} = await genericCoreKitRequestWrapper( action, overloadPayload);
     this.state = result.state;
@@ -127,6 +130,7 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
 
   public async logout(): Promise<void> {
     await this.genericRequestWithStateUpdate(CoreKitAction.logout, {});
+    await this.init();
   }
 
   public getCurrentFactorKey(): IFactorKey {
