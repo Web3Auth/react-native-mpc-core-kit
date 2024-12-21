@@ -2,7 +2,7 @@ import { generatePrivate } from '@toruslabs/eccrypto';
 import { bridgeEmit } from './Bridge';
 import { copyBuffer, CoreKitAction, BrigeToWebViewMessageType } from './common';
 import { rejectMap, resolveMap, storageMap } from './Bridge';
-import {   COREKIT_STATUS, CoreKitSigner, CreateFactorParams,   EnableMFAParams, IFactorKey,   InitParams,  JWTLoginParams,  MPCKeyDetails,  OAuthLoginParams,  UserInfo,  Web3AuthOptions, Web3AuthState   } from '@web3auth/mpc-core-kit';
+import { COREKIT_STATUS, CoreKitSigner, CreateFactorParams,  EnableMFAParams, IFactorKey,   InitParams,  JWTLoginParams,  MPCKeyDetails,  OAuthLoginParams,  UserInfo,  Web3AuthOptions, Web3AuthState   } from '@web3auth/mpc-core-kit';
 import { KeyType, Point } from '@tkey/common-types';
 import BN from 'bn.js';
 
