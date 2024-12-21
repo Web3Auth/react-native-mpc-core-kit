@@ -1,4 +1,4 @@
-import { EnableMFAParams, TssShareType, Web3AuthMPCCoreKit } from '@web3auth/mpc-core-kit';
+import { Web3AuthMPCCoreKit } from '@web3auth/mpc-core-kit';
 import { copyBuffer, CoreKitAction, MessageRequest, MessageResponse } from '../common';
 import { BN } from 'bn.js';
 
@@ -31,11 +31,8 @@ export async function handleMPCCoreKitRequest(
     }
     if (action === CoreKitAction.createFactor) {
       const { createFactorParams } = payload;
-      // const parsed = JSON.parse(createFactorParams);
-
       const result = await corekitInstance.createFactor({
-        shareType: createFactorParams.shareType as TssShareType,
-        factorKey: new BN(createFactorParams.factorKey, 'hex'),
+        ...createFactorParams
       });
       return { ruid, action, result : { result , status: corekitInstance.status , state: corekitInstance.state} };
     }
@@ -46,13 +43,7 @@ export async function handleMPCCoreKitRequest(
     }
     if (action === CoreKitAction.enableMFA) {
       const { enableMFAParams, recoveryFactor } = payload;
-      const params : EnableMFAParams = {
-        factorKey: new BN(enableMFAParams.factorKey, 'hex'),
-        shareDescription : enableMFAParams.shareDescription,
-        additionalMetadata : enableMFAParams.additionalMetadata,
-      };
-
-      const result = await corekitInstance.enableMFA(params, recoveryFactor);
+      const result = await corekitInstance.enableMFA(enableMFAParams, recoveryFactor);
       return { ruid, action, result: { result,  status: corekitInstance.status , state: corekitInstance.state} };
     }
     if (action === CoreKitAction.commitChanges) {
@@ -89,8 +80,8 @@ export async function handleMPCCoreKitRequest(
       return { ruid, action, result: { result, status: corekitInstance.status , state: corekitInstance.state} };
     }
     if (action === CoreKitAction.setDeviceFactor) {
-      const {factorKey, replace} = payload;
-      await corekitInstance.setDeviceFactor( new BN(factorKey, 'hex') , replace );
+      const { factorKey, replace } = payload;
+      await corekitInstance.setDeviceFactor( factorKey, replace );
       return { ruid, action, result: { status: corekitInstance.status , state: corekitInstance.state} };
     }
 
