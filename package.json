@@ -33,7 +33,7 @@
   "dependencies": {
     "@toruslabs/tss-dkls-lib": "^4.0.0",
     "@toruslabs/tss-frost-lib": "^1.0.0",
-    "@web3auth/mpc-core-kit": "^3.3.0"
+    "@web3auth/mpc-core-kit": "^3.2.7"
   },
   "devDependencies": {
     "@babel/core": "7.22.11",
@@ -61,6 +61,10 @@
     "@toruslabs/eccrypto": ">=5.0.0, <6.0.0",
     "loglevel": ">=1.0.0, <2.0.0",
     "react-native-react-bridge": ">=0.12.1, <0.13.0",
+    "esbuild-plugins-node-modules-polyfill": "^1.6.8",
+    "@toruslabs/tss-dkls-lib": "^4.0.0",
+    "@toruslabs/tss-frost-lib": "^1.0.0",
+    "@web3auth/mpc-core-kit": "^3.2.7",
     "react-native-webview": ">=13.6.0, <14.0.0"
   }
 }
