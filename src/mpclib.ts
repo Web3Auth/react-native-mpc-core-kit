@@ -61,6 +61,10 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
     return this._status;
   }
 
+  get signatures(): string[] {
+    return this.state?.signatures ? this.state.signatures : [];
+  }
+
   constructor( options: Web3AuthOptions) {
     this.options = options;
     this.keyType = options.tssLib.keyType as KeyType;
