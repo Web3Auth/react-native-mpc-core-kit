@@ -32,7 +32,8 @@ export async function handleMPCCoreKitRequest(
     if (action === CoreKitAction.createFactor) {
       const { createFactorParams } = payload;
       const result = await corekitInstance.createFactor({
-        ...createFactorParams
+        ...createFactorParams,
+        factorKey: createFactorParams.factorKey ? new BN(createFactorParams.factorKey, 'hex') : undefined,
       });
       return { ruid, action, result : { result , status: corekitInstance.status , state: corekitInstance.state} };
     }
@@ -43,8 +44,14 @@ export async function handleMPCCoreKitRequest(
     }
     if (action === CoreKitAction.enableMFA) {
       const { enableMFAParams, recoveryFactor } = payload;
-      const result = await corekitInstance.enableMFA(enableMFAParams, recoveryFactor);
-      return { ruid, action, result: { result,  status: corekitInstance.status , state: corekitInstance.state} };
+      const result = await corekitInstance.enableMFA(
+        {
+          ...enableMFAParams,
+          factorKey: enableMFAParams.factorKey ? new BN(enableMFAParams.factorKey, 'hex') : undefined,
+        },
+        recoveryFactor,
+      );
+      return { ruid, action, result: { result, status: corekitInstance.status, state: corekitInstance.state } };
     }
     if (action === CoreKitAction.commitChanges) {
       await corekitInstance.commitChanges();

@@ -117,7 +117,10 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async createFactor(createFactorParams: CreateFactorParams): Promise<string> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.createFactor, {createFactorParams});
+    return this.genericRequestWithStateUpdate(CoreKitAction.createFactor, {
+      ...createFactorParams,
+      factorKey: createFactorParams.factorKey?.toString('hex'),
+    });
   }
 
   public async deleteFactor(factorPub: Point): Promise<void> {
@@ -125,7 +128,11 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor?: boolean): Promise<string> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.enableMFA, {enableMFAParams, recoveryFactor});
+    return this.genericRequestWithStateUpdate(CoreKitAction.enableMFA, {
+      ...enableMFAParams,
+      factorKey: enableMFAParams.factorKey?.toString('hex'),
+      recoveryFactor,
+    });
   }
 
   public async commitChanges(): Promise<void> {
@@ -134,6 +141,7 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
 
   public async logout(): Promise<void> {
     await this.genericRequestWithStateUpdate(CoreKitAction.logout, {});
+    this.ruid = undefined;
     await this.init();
   }
 
