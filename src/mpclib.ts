@@ -77,8 +77,8 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
       throw new Error('Please initalize first not set');
     }
     const overloadPayload = {...payload, instanceId: this.ruid}
-    const result : {result : T, status: COREKIT_STATUS, state: Web3AuthState} = await genericCoreKitRequestWrapper( action, overloadPayload);
-    this.state = result.state;
+    const result : {result : T, status: COREKIT_STATUS, state:  Omit<Web3AuthState, 'factorKey'> & {factorKey: string | undefined}} = await genericCoreKitRequestWrapper( action, overloadPayload);
+    this.state = {...result.state, factorKey: result.state.factorKey ? new BN(result.state.factorKey, 'hex') : undefined};
     this._status = result.status;
     return result.result;
   }
@@ -112,8 +112,8 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
     return this.genericRequestWithStateUpdate(CoreKitAction.loginWithJWT, {jwt});
   }
 
-  public async inputFactorKey(factorKey: import('bn.js')): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.inputFactorKey, {factorKey});
+  public async inputFactorKey(factorKey: BN): Promise<void> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.inputFactorKey, {factorKey: factorKey.toString('hex')});
   }
 
   public async createFactor(createFactorParams: CreateFactorParams): Promise<string> {
