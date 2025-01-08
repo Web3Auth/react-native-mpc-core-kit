@@ -79,8 +79,6 @@ export async function handleMPCCoreKitRequest(
         privKey: new BN(corekitInstance.state.postBoxKey!, 'hex'),
         input: {message: 'KEY_NOT_FOUND'},
       });
-      await corekitInstance.logout();
-
       return { ruid, action, result: { status: corekitInstance.status , state: getPostMessageCoreKitState(corekitInstance)} };
     }
 
