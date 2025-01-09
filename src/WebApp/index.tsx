@@ -1,85 +1,78 @@
-import React, { useEffect } from 'react';
-import {
-  emit,
-  useNativeMessage,
-  webViewCreateRoot,
-} from 'react-native-react-bridge/lib/web';
-import TssLibv4 from '@toruslabs/tss-dkls-lib';
-import TssFrost from '@toruslabs/tss-frost-lib';
+import { generatePrivate } from "@toruslabs/eccrypto";
+import TssLibv4 from "@toruslabs/tss-dkls-lib";
+import TssFrost from "@toruslabs/tss-frost-lib";
+import { IAsyncStorage, Web3AuthMPCCoreKit, Web3AuthOptions } from "@web3auth/mpc-core-kit";
+import React, { useEffect } from "react";
+import { emit, useNativeMessage, webViewCreateRoot } from "react-native-react-bridge/lib/web";
 
 import {
-  type MessageResponse,
-  type MessageRequest,
-  BrigeToWebViewMessageType,
-  LibError,
-  CoreKitAction,
   BrigeToRNMessageType,
+  BrigeToWebViewMessageType,
+  CoreKitAction,
+  LibError,
+  type MessageRequest,
+  type MessageResponse,
   StorageAction,
-} from '../common';
-import { IAsyncStorage, Web3AuthMPCCoreKit, Web3AuthOptions } from '@web3auth/mpc-core-kit';
-import { handleMPCCoreKitRequest } from './mpc';
-import { generatePrivate } from '@toruslabs/eccrypto';
+} from "../common";
+import { handleMPCCoreKitRequest } from "./mpc";
 
 const style = {
-  width: '100vw',
-  height: '0vh',
-  margin: 'auto',
-  backgroundColor: 'lightblue',
+  width: "100vw",
+  height: "0vh",
+  margin: "auto",
+  backgroundColor: "lightblue",
 };
 
-let bridgeEmit: any;
-bridgeEmit = emit;
+const bridgeEmit = emit;
 
 export const debug = (data: any) => {
   bridgeEmit({
-    type: 'debug',
+    type: "debug",
     data,
   });
 };
 const error = (data: LibError) => {
   bridgeEmit({
-    type: 'error',
+    type: "error",
     data,
   });
 };
 
-let resolverMap = new Map<string, any>();
-let rejectMap = new Map<string, any>();
+const resolverMap = new Map<string, any>();
+const rejectMap = new Map<string, any>();
 
 // const rec : Record<string, string> = {};
-const createStorageInstance = ( tag: string ) =>{
-
-  const memoryStorage : IAsyncStorage = {
-
-    getItem: async(key: string) => {
+const createStorageInstance = (tag: string) => {
+  const memoryStorage: IAsyncStorage = {
+    getItem: async (key: string) => {
       // const value = rec[key];
       // if (value === undefined) { return null; }
-      debug('getting async storage data');
+      debug("getting async storage data");
 
-      let ruid = generatePrivate().toString('hex');
-      let action = StorageAction.getItem;
-      let payload = { key , instanceId: tag };
-      emit({ type: BrigeToRNMessageType.StorageRequest , data: { ruid, action, payload } });
+      const ruid = generatePrivate().toString("hex");
+      const action = StorageAction.getItem;
+      const payload = { key, instanceId: tag };
+      emit({ type: BrigeToRNMessageType.StorageRequest, data: { ruid, action, payload } });
 
       // todo add timeout to fail
-      const getItemPromise : Promise<string|null> = new Promise( (resolve, reject) => {
+      const getItemPromise: Promise<string | null> = new Promise((resolve, reject) => {
         resolverMap.set(ruid, resolve);
         rejectMap.set(ruid, reject);
       });
 
       return getItemPromise;
     },
-    setItem: async(key: string, value: string) => {
+    setItem: async (key: string, value: string) => {
       // rec[key] = value;
       // const value = rec[key];
 
-      let ruid = generatePrivate().toString('hex');
-      let action = StorageAction.setItem;
-      let payload = { key , value, instanceId: tag  };
-      emit({ type: BrigeToRNMessageType.StorageRequest , data: { ruid, action, payload } });
+      const ruid = generatePrivate().toString("hex");
+      const action = StorageAction.setItem;
+      const payload = { key, value, instanceId: tag };
+      emit({ type: BrigeToRNMessageType.StorageRequest, data: { ruid, action, payload } });
 
       // todo add timeout to fail
-      await new Promise( (resolve, reject) => {
+      await new Promise((resolve, reject) => {
         resolverMap.set(ruid, resolve);
         rejectMap.set(ruid, reject);
       });
@@ -89,10 +82,8 @@ const createStorageInstance = ( tag: string ) =>{
   return memoryStorage;
 };
 
-async function handleResponse(
-  data: MessageResponse,
-): Promise<MessageResponse> {
-  const { action, result, ruid , error : msgerror} = data;
+async function handleResponse(data: MessageResponse): Promise<MessageResponse> {
+  const { action, result, ruid, error: msgerror } = data;
   if (msgerror) {
     throw new Error(msgerror);
   }
@@ -100,24 +91,23 @@ async function handleResponse(
   if (action === StorageAction.getItem) {
     resolverMap.get(ruid)(result);
     resolverMap.delete(ruid);
-    return { ruid, action, result: 'done' };
+    return { ruid, action, result: "done" };
   }
   if (action === StorageAction.setItem) {
     resolverMap.get(ruid)(result);
     resolverMap.delete(ruid);
-    return { ruid, action, result: 'done' };
+    return { ruid, action, result: "done" };
   }
 
-  throw { ruid, action, result: 'done' };
+  return { ruid, action, result: "done" };
 }
 
 const corekitInstanceMap = new Map<string, Web3AuthMPCCoreKit>();
 
-
 function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
   debug(options);
 
-  const modOptions : Web3AuthOptions = {
+  const modOptions: Web3AuthOptions = {
     ...options,
     tssLib: options.tssLib.keyType === TssFrost.keyType ? TssFrost : TssLibv4,
     storage: createStorageInstance(ruid),
@@ -128,23 +118,22 @@ function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
 
 const Root = () => {
   useEffect(() => {
-      const init = async () => {
-        debug('initialized 1111111');
-      };
+    const init = async () => {
+      debug("initialized 1111111");
+    };
 
-      // handle error
-      init().catch((e) => {
-        error(e.message);
-      });
+    // handle error
+    init().catch((e) => {
+      error(e.message);
+    });
   }, []);
 
   useNativeMessage(async (message: { type: string; data: any }) => {
-
     if (message.type === BrigeToWebViewMessageType.StorageResponse) {
       try {
         await handleResponse(message.data);
       } catch (e) {
-        debug({ type: 'handleTssLibResponse error', e });
+        debug({ type: "handleTssLibResponse error", e });
         error({
           msg: `${message.type} error`,
           payload: message.data,
@@ -154,21 +143,21 @@ const Root = () => {
     }
 
     if (message.type === BrigeToWebViewMessageType.CoreKitRequest) {
-      debug({ type: 'corekit request', message });
+      debug({ type: "corekit request", message });
       try {
         const { action, payload, ruid } = message.data as MessageRequest;
 
         let coreKitInstance = corekitInstanceMap.get(payload.instanceId);
 
-        if ( action === CoreKitAction.createInstance && coreKitInstance === undefined) {
+        if (action === CoreKitAction.createInstance && coreKitInstance === undefined) {
           coreKitInstance = createMPCCoreKitInstance(payload.options, ruid);
-          corekitInstanceMap.set(ruid, coreKitInstance)
-          debug({msg: 'created mpc instance ', ruid});
+          corekitInstanceMap.set(ruid, coreKitInstance);
+          debug({ msg: "created mpc instance ", ruid });
           emit({ type: BrigeToRNMessageType.CoreKitResponse, data: { ruid, action, result: ruid } });
           return;
         }
         if (coreKitInstance === undefined) {
-          throw new Error('coreKitInstance not found');
+          throw new Error("coreKitInstance not found");
         }
 
         const result = await handleMPCCoreKitRequest(message.data, coreKitInstance);

@@ -21,19 +21,15 @@
     "build": "rollup -c ",
     "prepack": "npm run build"
   },
-  "lint-staged": {
-    "*.{json,md}": [
-      "prettier --write"
-    ],
-    "*.{js,ts}": "eslint --cache --fix"
-  },
   "keywords": [],
   "author": "Web3Auth",
   "license": "BSD",
   "dependencies": {
+    "@tkey/common-types": "^15.1.0",
     "@toruslabs/tss-dkls-lib": "^4.0.0",
     "@toruslabs/tss-frost-lib": "^1.0.0",
-    "@web3auth/mpc-core-kit": "^3.4.0"
+    "@web3auth/mpc-core-kit": "^3.3.0",
+    "bn.js": "^5.2.1"
   },
   "devDependencies": {
     "@babel/core": "7.22.11",
@@ -42,10 +38,17 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-typescript": "11.1.5",
-    "@toruslabs/torus-scripts": "^5.1.0",
+    "@toruslabs/config": "^2.2.0",
+    "@toruslabs/eslint-config-typescript": "^3.3.3",
+    "@toruslabs/torus-scripts": "^6.1.2",
     "@types/node": "20.10.1",
     "@types/react": "^18.2.42",
+    "@types/react-native": "^0.73.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "eslint": "^8.56.0",
     "loglevel": "1.9.2",
+    "prettier": "^3.3.3",
+    "prettier-eslint": "^16.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-native": "^0.75.2",
@@ -59,12 +62,20 @@
   },
   "peerDependencies": {
     "@toruslabs/eccrypto": ">=5.0.0, <6.0.0",
-    "loglevel": ">=1.0.0, <2.0.0",
-    "react-native-react-bridge": ">=0.12.1, <0.13.0",
-    "esbuild-plugins-node-modules-polyfill": "^1.6.8",
     "@toruslabs/tss-dkls-lib": "^4.0.0",
     "@toruslabs/tss-frost-lib": "^1.0.0",
     "@web3auth/mpc-core-kit": "^3.3.0",
+    "esbuild-plugins-node-modules-polyfill": "^1.6.8",
+    "loglevel": ">=1.0.0, <2.0.0",
+    "react": "^18.2.0",
+    "react-native": "^0.75.2",
+    "react-native-react-bridge": ">=0.12.1, <0.13.0",
     "react-native-webview": ">=13.6.0, <14.0.0"
+  },
+  "lint-staged": {
+    "!(*d).ts": [
+      "eslint --cache --fix",
+      "prettier --write"
+    ]
   }
 }

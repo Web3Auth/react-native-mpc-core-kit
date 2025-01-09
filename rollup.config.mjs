@@ -1,4 +1,3 @@
-// rollup.config.js
 import typescript from "@rollup/plugin-typescript";
 import { babel } from '@rollup/plugin-babel';
 
@@ -14,10 +13,12 @@ export default {
         format: "cjs",
         // needed for import cjs
         interop: "compat",
+        exports: "named"
       },
       {
         file: pkg.module,
         format: "es",
+        exports: "named"
       },
       // {
       //   dir: "dist",
