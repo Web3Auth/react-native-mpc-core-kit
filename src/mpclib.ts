@@ -1,31 +1,44 @@
-import { generatePrivate } from '@toruslabs/eccrypto';
-import { bridgeEmit } from './Bridge';
-import { copyBuffer, CoreKitAction, BrigeToWebViewMessageType } from './common';
-import { rejectMap, resolveMap, storageMap } from './Bridge';
-import { COREKIT_STATUS, CoreKitSigner, CreateFactorParams,  EnableMFAParams, IFactorKey,   InitParams,  JWTLoginParams,  MPCKeyDetails,  OAuthLoginParams,  UserInfo,  Web3AuthOptions, Web3AuthState   } from '@web3auth/mpc-core-kit';
-import { KeyType, Point } from '@tkey/common-types';
-import BN from 'bn.js';
+import { KeyType, Point } from "@tkey/common-types";
+import { generatePrivate } from "@toruslabs/eccrypto";
+import {
+  COREKIT_STATUS,
+  CreateFactorParams,
+  EnableMFAParams,
+  IFactorKey,
+  InitParams,
+  JWTLoginParams,
+  MPCKeyDetails,
+  OAuthLoginParams,
+  UserInfo,
+  Web3AuthOptions,
+  Web3AuthState,
+} from "@web3auth/mpc-core-kit";
+import BN from "bn.js";
 
-export async function createInstance( options: Web3AuthOptions): Promise<string> {
-    let ruid = generatePrivate().toString('hex');
+import { bridgeEmit, rejectMap, resolveMap, storageMap } from "./Bridge";
+import { BrigeToWebViewMessageType, copyBuffer, CoreKitAction } from "./common";
+import { ICoreKitRN } from "./interfaces";
 
-    storageMap[ruid] = options.storage;
+export async function createInstance(options: Web3AuthOptions): Promise<string> {
+  const ruid = generatePrivate().toString("hex");
 
-    const action = CoreKitAction.createInstance;
-    bridgeEmit({
-      type: BrigeToWebViewMessageType.CoreKitRequest,
-      data: { ruid, action, payload: { options } },
-    });
+  storageMap[ruid] = options.storage;
 
-    await new Promise((resolve, reject) => {
-      resolveMap.set(ruid + action, resolve);
-      rejectMap.set(ruid + action, reject);
-    });
-    return ruid;
+  const action = CoreKitAction.createInstance;
+  bridgeEmit({
+    type: BrigeToWebViewMessageType.CoreKitRequest,
+    data: { ruid, action, payload: { options } },
+  });
+
+  await new Promise((resolve, reject) => {
+    resolveMap.set(ruid + action, resolve);
+    rejectMap.set(ruid + action, reject);
+  });
+  return ruid;
 }
 
-const genericCoreKitRequestWrapper = async <P,T>(action: CoreKitAction, payload: P) : Promise<T> => {
-  let ruid = generatePrivate().toString('hex');
+const genericCoreKitRequestWrapper = async <P, T>(action: CoreKitAction, payload: P): Promise<T> => {
+  const ruid = generatePrivate().toString("hex");
   bridgeEmit({
     type: BrigeToWebViewMessageType.CoreKitRequest,
     data: { ruid, action, payload },
@@ -38,18 +51,27 @@ const genericCoreKitRequestWrapper = async <P,T>(action: CoreKitAction, payload:
 };
 
 // TODO fix ICoreKit to not include variable
-export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
-  options : Web3AuthOptions;
-
-  private ruid? : string;
-
-  private _status : COREKIT_STATUS;
+export class Web3AuthMPCCoreKitRN implements ICoreKitRN {
+  options: Web3AuthOptions;
 
   keyType: KeyType;
 
   public state: Web3AuthState = { accountIndex: 0 };
 
+  private ruid?: string;
 
+  private _status: COREKIT_STATUS;
+
+  constructor(options: Web3AuthOptions) {
+    if (!options.web3AuthClientId) {
+      // TODO: use CoreKitError class once its exported from @web3auth/mpc-core-kit
+      throw new Error("web3AuthClientId is required");
+    }
+    this.options = options;
+    this.keyType = options.tssLib.keyType as KeyType;
+    this._status = COREKIT_STATUS.NOT_INITIALIZED;
+    this.ruid = undefined;
+  }
 
   /**
    * Gets the current status of the CoreKit.
@@ -65,75 +87,66 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
     return this.state?.signatures ? this.state.signatures : [];
   }
 
-  constructor( options: Web3AuthOptions) {
-    this.options = options;
-    this.keyType = options.tssLib.keyType as KeyType;
-    this._status = COREKIT_STATUS.NOT_INITIALIZED;
-    this.ruid = undefined;
+  get supportsAccountIndex(): boolean {
+    return this.keyType !== KeyType.ed25519;
   }
 
-  public async genericRequestWithStateUpdate <P,T>(action: CoreKitAction, payload: P) : Promise<T>{
+  public async genericRequestWithStateUpdate<P, T>(action: CoreKitAction, payload: P): Promise<T> {
     if (!this.ruid) {
-      throw new Error('Please initalize first not set');
+      throw new Error("Please initialize the sdk first using init function");
     }
-    const overloadPayload = {...payload, instanceId: this.ruid}
-    const result : {result : T, status: COREKIT_STATUS, state:  Omit<Web3AuthState, 'factorKey'> & {factorKey: string | undefined}} = await genericCoreKitRequestWrapper( action, overloadPayload);
-    this.state = {...result.state, factorKey: result.state.factorKey ? new BN(result.state.factorKey, 'hex') : undefined};
+    const overloadPayload = { ...payload, instanceId: this.ruid };
+    const result: { result: T; status: COREKIT_STATUS; state: Omit<Web3AuthState, "factorKey"> & { factorKey: string | undefined } } =
+      await genericCoreKitRequestWrapper(action, overloadPayload);
+    this.state = { ...result.state, factorKey: result.state.factorKey ? new BN(result.state.factorKey, "hex") : undefined };
     this._status = result.status;
     return result.result;
   }
 
-  // Signer interface
-  async sign(data: Buffer, hashed?: boolean): Promise<Buffer> {
-    const buf: Buffer = await this.genericRequestWithStateUpdate(CoreKitAction.sign, {data, hashed});
-    return copyBuffer(buf);
-  }
-
-  getPubKey(): Buffer {
-    if (!this.state.tssPubKey) {
-      throw new Error('state.tssPubKey not set');
-    }
-    return copyBuffer(this.state.tssPubKey);
-  }
-
-  public async init(params?: InitParams): Promise<void> {
+  public async init(params: InitParams = { handleRedirectResult: true }): Promise<void> {
     if (!this.ruid) {
       const ruid = await createInstance(this.options);
       this.ruid = ruid;
     }
-    return this.genericRequestWithStateUpdate(CoreKitAction.Init, {params});
+    return this.genericRequestWithStateUpdate(CoreKitAction.Init, { params });
   }
 
   public async loginWithOAuth(_loginParams: OAuthLoginParams): Promise<void> {
-    throw new Error('Method is not supported for React Native');
+    throw new Error("Method is not supported for React Native");
   }
 
   public async loginWithJWT(jwt: JWTLoginParams): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.loginWithJWT, {jwt});
+    return this.genericRequestWithStateUpdate(CoreKitAction.loginWithJWT, { jwt });
+  }
+
+  // Signer interface
+  async sign(data: Buffer, hashed?: boolean): Promise<Buffer> {
+    const buf: Buffer = await this.genericRequestWithStateUpdate(CoreKitAction.sign, { data, hashed });
+    return copyBuffer(buf);
   }
 
   public async inputFactorKey(factorKey: BN): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.inputFactorKey, {factorKey: factorKey.toString('hex')});
+    return this.genericRequestWithStateUpdate(CoreKitAction.inputFactorKey, { factorKey: factorKey.toString("hex") });
   }
 
   public async createFactor(createFactorParams: CreateFactorParams): Promise<string> {
     return this.genericRequestWithStateUpdate(CoreKitAction.createFactor, {
-      createFactorParams : {
+      createFactorParams: {
         ...createFactorParams,
-        factorKey: createFactorParams.factorKey?.toString('hex'),
-      }
+        factorKey: createFactorParams.factorKey?.toString("hex"),
+      },
     });
   }
 
   public async deleteFactor(factorPub: Point): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.deleteFactor, {factorPub});
+    return this.genericRequestWithStateUpdate(CoreKitAction.deleteFactor, { factorPub });
   }
 
-  public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor?: boolean): Promise<string> {
+  public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor = true): Promise<string> {
     return this.genericRequestWithStateUpdate(CoreKitAction.enableMFA, {
       enableMFAParams: {
         ...enableMFAParams,
-        factorKey: enableMFAParams.factorKey?.toString('hex')
+        factorKey: enableMFAParams.factorKey?.toString("hex"),
       },
       recoveryFactor,
     });
@@ -150,8 +163,9 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public getCurrentFactorKey(): IFactorKey {
-    if (!this.state.factorKey || !this.state.tssShareIndex) {throw new Error('Factor key not available');}
-    console.log(this.state);
+    if (!this.state.factorKey || !this.state.tssShareIndex) {
+      throw new Error("Factor key not available");
+    }
     return {
       factorKey: this.state.factorKey,
       shareType: this.state.tssShareIndex,
@@ -159,13 +173,23 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public getUserInfo(): UserInfo {
-    if (!this.state.userInfo) { throw new Error('invalid userInfo'); }
+    if (!this.state.userInfo) {
+      throw new Error("userInfo not set, please login first");
+    }
     return this.state.userInfo;
   }
 
+  /**
+   * WARNING: Use with caution. This will export the private signing key.
+   *
+   * Exports the private key scalar for the current account index.
+   *
+   * For keytype ed25519, consider using _UNSAFE_exportTssEd25519Seed.
+   */
   public async _UNSAFE_exportTssKey(): Promise<string> {
     return this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_exportTssKey, {});
   }
+
   /**
    * Exports the TSS Ed25519 seed, if available.
    * This is a sensitive operation and should not be used in production.
@@ -181,19 +205,19 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   public async setDeviceFactor(factorKey: BN, replace = false): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.setDeviceFactor, { factorKey, replace});
+    return this.genericRequestWithStateUpdate(CoreKitAction.setDeviceFactor, { factorKey, replace });
   }
 
   public async setManualSync(manualSync: boolean): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.setManualSync, {manualSync});
+    return this.genericRequestWithStateUpdate(CoreKitAction.setManualSync, { manualSync });
   }
 
   // sycn func to async func as bridging is via async
-  public async setTssWalletIndex(accountIndex: number) : Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.setTssWalletIndex, {accountIndex});
+  public async setTssWalletIndex(accountIndex: number): Promise<void> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.setTssWalletIndex, { accountIndex });
   }
 
-  public async getTssFactorPub (): Promise<string[]> {
+  public async getTssFactorPub(): Promise<string[]> {
     return this.genericRequestWithStateUpdate(CoreKitAction.getTssFactorPub, {});
   }
 
@@ -207,18 +231,26 @@ export class Web3AuthMPCCoreKitRN implements CoreKitSigner {
   }
 
   /**
-   * Get public key point.
-   */
-  public async getPubKeyPoint(): Promise<Point> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.getPubKeyPoint, {});
-  }
-
-  /**
    * Get public key in ed25519 format.
    *
    * Throws an error if keytype is not compatible with ed25519.
    */
   public async getPubKeyEd25519(): Promise<Buffer> {
     return this.genericRequestWithStateUpdate(CoreKitAction.getPubKeyEd25519, {});
+  }
+
+  /**
+   * @returns public key point for secp256k1 key type
+   */
+  public async getPubKeyPoint(): Promise<Point> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.getPubKeyPoint, {});
+  }
+
+  /**
+   *
+   * @returns pub key for secp256k1 key type
+   */
+  public async getPubKey(): Promise<Buffer> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.getPubKey, {});
   }
 }

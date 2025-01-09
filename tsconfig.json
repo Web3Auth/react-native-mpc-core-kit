@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "es5",
     "module": "esnext",
-    "moduleResolution": "bundler",
     "jsx": "react",
     "lib": ["dom", "dom.iterable", "esnext"],
     "strict": true,
@@ -23,9 +22,10 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "baseUrl": "./",
+    "moduleResolution": "node", 
+    "types": ["react-native", "node"],
   },
-  "include": ["src/**/*.ts"],
-
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["src/**/*.spec.*"],
   "output": "dist"
 }
