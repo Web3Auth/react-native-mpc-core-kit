@@ -263,6 +263,6 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
     if (!this.state.tssPubKey) {
       throw new Error("tssPubKey not set, please login first");
     }
-    return this.state.tssPubKey;
+    return copyBuffer(this.state.tssPubKey);
   }
 }
