@@ -1,6 +1,6 @@
 {
   "name": "@web3auth/react-native-mpc-core-kit",
-  "version": "0.1.7-alpha.0",
+  "version": "0.1.8-alpha.0",
   "description": "",
   "types": "dist/index.d.ts",
   "ts": "src/index.ts",
