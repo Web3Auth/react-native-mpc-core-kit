@@ -88,7 +88,7 @@ async function handleResponse(data: MessageResponse): Promise<MessageResponse> {
     resolverMap.delete(ruid);
     rejectMap.get(ruid)(msgerror);
     rejectMap.delete(ruid);
-    return { ruid, action, result: 'done' };
+    return { ruid, action, result: "done" };
   }
 
   if (action === StorageAction.getItem) {
@@ -97,7 +97,7 @@ async function handleResponse(data: MessageResponse): Promise<MessageResponse> {
     resolverMap.delete(ruid);
     return { ruid, action, result: "done" };
   }
-  
+
   if (action === StorageAction.setItem) {
     rejectMap.delete(ruid);
     resolverMap.get(ruid)(result);
@@ -139,7 +139,7 @@ const Root = () => {
       try {
         await handleResponse(message.data);
       } catch (e) {
-        debug({ type: 'handleTssLibResponse error - ' + message.data?.action , e });
+        debug({ type: `handleTssLibResponse error - ${message.data?.action}`, e });
         error({
           msg: `${message.type} error`,
           payload: message.data,
@@ -174,7 +174,7 @@ const Root = () => {
         }
         emit({ type: BrigeToRNMessageType.CoreKitResponse, data: result });
       } catch (e) {
-        debug({ type: 'error - ' + message.data?.action , e });
+        debug({ type: `error - ${message.data?.action}`, e });
         error({
           msg: `${message.type} error`,
           payload: message.data,
