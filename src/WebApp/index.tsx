@@ -82,30 +82,30 @@ const createStorageInstance = (tag: string) => {
   return memoryStorage;
 };
 
-async function handleResponse(data: MessageResponse): Promise<MessageResponse> {
+async function handleResponse(data: MessageResponse): Promise<void> {
   const { action, result, ruid, error: msgerror } = data;
   if (msgerror) {
     resolverMap.delete(ruid);
     rejectMap.get(ruid)(msgerror);
     rejectMap.delete(ruid);
-    return { ruid, action, result: "done" };
+    return;
   }
 
   if (action === StorageAction.getItem) {
     rejectMap.delete(ruid);
     resolverMap.get(ruid)(result);
     resolverMap.delete(ruid);
-    return { ruid, action, result: "done" };
+    return;
   }
 
   if (action === StorageAction.setItem) {
     rejectMap.delete(ruid);
     resolverMap.get(ruid)(result);
     resolverMap.delete(ruid);
-    return { ruid, action, result: "done" };
+    return;
   }
 
-  return { ruid, action, result: "done" };
+  throw Error(`unknown action type - ${action} \n ruid - ${ruid}`);
 }
 
 const corekitInstanceMap = new Map<string, Web3AuthMPCCoreKit>();
@@ -139,7 +139,7 @@ const Root = () => {
       try {
         await handleResponse(message.data);
       } catch (e) {
-        debug({ type: `handleTssLibResponse error - ${message.data?.action}`, e });
+        debug({ type: `handleResponse error - ${message.data?.action}`, e });
         error({
           msg: `${message.type} error`,
           payload: message.data,
