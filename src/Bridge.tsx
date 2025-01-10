@@ -117,11 +117,11 @@ export const Bridge = (params: { logLevel?: LogLevelDesc; resolveReady: (value: 
     }
 
     if (message.type === "error") {
-      const { payload, error } = message.data as LibError;
+      const { payload } = message.data as LibError;
       if (payload.ruid && payload.action) {
-        handleTssLibError({ ...(payload as MessageResponse), error });
+        handleTssLibError({ ...(payload as MessageResponse) });
       } else {
-        log.error("error", error);
+        log.error("error", payload.error);
       }
     }
     if (message.type === "state") {
