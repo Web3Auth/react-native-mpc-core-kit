@@ -2,6 +2,7 @@ import { KeyType, Point } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import {
   COREKIT_STATUS,
+  CoreKitSigner,
   CreateFactorParams,
   EnableMFAParams,
   IFactorKey,
@@ -51,7 +52,7 @@ const genericCoreKitRequestWrapper = async <P, T>(action: CoreKitAction, payload
 };
 
 // TODO fix ICoreKit to not include variable
-export class Web3AuthMPCCoreKitRN implements ICoreKitRN {
+export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
   options: Web3AuthOptions;
 
   keyType: KeyType;
@@ -250,7 +251,18 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN {
    *
    * @returns pub key for secp256k1 key type
    */
-  public async getPubKey(): Promise<Buffer> {
+  public async getPubKeySync(): Promise<Buffer> {
     return this.genericRequestWithStateUpdate(CoreKitAction.getPubKey, {});
+  }
+
+  /**
+   *
+   * @returns pub key for secp256k1 key type
+   */
+  public getPubKey(): Buffer {
+    if (!this.state.tssPubKey) {
+      throw new Error("tssPubKey not set, please login first");
+    }
+    return this.state.tssPubKey;
   }
 }
