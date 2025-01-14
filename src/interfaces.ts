@@ -1,4 +1,4 @@
-import { ICoreKit, MPCKeyDetails } from "@web3auth/mpc-core-kit";
+import { ICoreKit, JWTLoginParams, MPCKeyDetails } from "@web3auth/mpc-core-kit";
 
 export interface ICoreKitRN extends Omit<ICoreKit, "getKeyDetails" | "tKey" | "sessionId"> {
   /**
@@ -6,3 +6,5 @@ export interface ICoreKitRN extends Omit<ICoreKit, "getKeyDetails" | "tKey" | "s
    */
   getKeyDetails(): Promise<MPCKeyDetails>;
 }
+
+export type { JWTLoginParams };
