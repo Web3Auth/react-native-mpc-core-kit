@@ -123,6 +123,12 @@ export async function handleMPCCoreKitRequest(data: MessageRequest, corekitInsta
     return { ruid, action, result: { result, status: corekitInstance.status, state: getPostMessageCoreKitState(corekitInstance) } };
   }
 
+  if (action === CoreKitAction._UNSAFE_recoverTssKey) {
+    const { factorKeys } = payload as { factorKeys: string[] };
+    const result = await corekitInstance._UNSAFE_recoverTssKey(factorKeys);
+    return { ruid, action, result: { result, status: corekitInstance.status, state: getPostMessageCoreKitState(corekitInstance) } };
+  }
+
   throw new Error("unknown action");
   // return { ruid, action, result: 'unknown action', error: 'unknown action' };
 }

@@ -201,6 +201,11 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
     return copyBuffer(buf);
   }
 
+  public async _UNSAFE_recoverTssKey(factorKeys: string[]): Promise<string> {
+    const result = await this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_recoverTssKey, { factorKeys });
+    return result as string;
+  }
+
   public async getDeviceFactor(): Promise<string> {
     return this.genericRequestWithStateUpdate(CoreKitAction.getDeviceFactor, {});
   }

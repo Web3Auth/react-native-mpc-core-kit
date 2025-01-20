@@ -60,6 +60,7 @@ export enum CoreKitAction {
   _UNSAFE_exportTssKey = "_UNSAFE_exportTssKey",
   _UNSAFE_exportTssEd25519Seed = "_UNSAFE_exportTssEd25519Seed",
   _UNSAFE_resetAccount = "_UNSAFE_resetAccount",
+  _UNSAFE_recoverTssKey = "_UNSAFE_recoverTssKey",
   getCurrentFactorKey = "get_current_factor_key",
   getUserInfo = "get_user_info",
   getKeyDetails = "get_key_details",
