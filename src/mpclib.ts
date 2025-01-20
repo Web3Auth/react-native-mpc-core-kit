@@ -20,23 +20,7 @@ import { bridgeEmit, rejectMap, resolveMap, storageMap } from "./Bridge";
 import { BrigeToWebViewMessageType, copyBuffer, CoreKitAction } from "./common";
 import { ICoreKitRN } from "./interfaces";
 
-export async function createInstance(options: Web3AuthOptions): Promise<string> {
-  const ruid = generatePrivate().toString("hex");
-
-  storageMap[ruid] = options.storage;
-
-  const action = CoreKitAction.createInstance;
-  bridgeEmit({
-    type: BrigeToWebViewMessageType.CoreKitRequest,
-    data: { ruid, action, payload: { options } },
-  });
-
-  await new Promise((resolve, reject) => {
-    resolveMap.set(ruid + action, resolve);
-    rejectMap.set(ruid + action, reject);
-  });
-  return ruid;
-}
+const BridgeTimeOut = 20_000;
 
 const genericCoreKitRequestWrapper = async <P, T>(action: CoreKitAction, payload: P): Promise<T> => {
   const ruid = generatePrivate().toString("hex");
@@ -44,12 +28,30 @@ const genericCoreKitRequestWrapper = async <P, T>(action: CoreKitAction, payload
     type: BrigeToWebViewMessageType.CoreKitRequest,
     data: { ruid, action, payload },
   });
+
+  // set timeout for detecting timeout
+  const timeout = setTimeout(() => {
+    rejectMap.set(ruid + action, new Error("Bridge timeout, check if bridge is properly mounted"));
+  }, BridgeTimeOut);
+
   const result = await new Promise((resolve, reject) => {
     resolveMap.set(ruid + action, resolve);
     rejectMap.set(ruid + action, reject);
   });
+
+  if (timeout) {
+    clearTimeout(timeout);
+  }
+
   return result as T;
 };
+
+export async function createInstance(options: Web3AuthOptions): Promise<string> {
+  const action = CoreKitAction.createInstance;
+  const ruid: string = await genericCoreKitRequestWrapper(action, options);
+  storageMap[ruid] = options.storage;
+  return ruid;
+}
 
 // TODO fix ICoreKit to not include variable
 export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
