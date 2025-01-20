@@ -96,6 +96,10 @@ const handleStorageRequest = async (data: MessageRequest) => {
 export const Bridge = (params: { logLevel?: LogLevelDesc; resolveReady: (value: boolean) => void }) => {
   useEffect(() => {
     log.setLevel(params.logLevel || "info");
+    return () => {
+      // on unmount, indicate Bridge not ready
+      params.resolveReady(false);
+    };
   }, [params.logLevel]);
 
   // useWebViewMessage hook create props for WebView and handle communication
