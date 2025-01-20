@@ -17,6 +17,15 @@ export const rejectMap = new Map<string, any>();
 
 export const storageMap: Record<string, IAsyncStorage | IStorage> = {};
 
+let isReadyResolve: (value: boolean) => void;
+
+export const isReadyPromise: Promise<boolean> = new Promise((resolve) => {
+  isReadyResolve = resolve;
+  setTimeout(() => {
+    resolve(false);
+  }, 10000);
+});
+
 const styles = StyleSheet.create({
   container: {
     height: 0,
@@ -93,7 +102,7 @@ const handleStorageRequest = async (data: MessageRequest) => {
   }
 };
 
-export const Bridge = (params: { logLevel?: LogLevelDesc; resolveReady: (value: boolean) => void }) => {
+export const Bridge = (params: { logLevel?: LogLevelDesc }) => {
   useEffect(() => {
     log.setLevel(params.logLevel || "info");
   }, [params.logLevel]);
@@ -104,7 +113,7 @@ export const Bridge = (params: { logLevel?: LogLevelDesc; resolveReady: (value: 
     if (message.type === "debug") {
       log.debug("debug", message.data);
       // temporary indicate webview is ready
-      params.resolveReady(true);
+      isReadyResolve(true);
     }
 
     if (message.type === BrigeToRNMessageType.CoreKitResponse) {

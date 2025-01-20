@@ -73,8 +73,11 @@ export async function handleMPCCoreKitRequest(data: MessageRequest, corekitInsta
   }
 
   if (action === CoreKitAction._UNSAFE_resetAccount) {
+    if (!corekitInstance.state.postBoxKey) {
+      throw new Error("postBoxKey not available");
+    }
     await corekitInstance.tKey.storageLayer.setMetadata({
-      privKey: new BN(corekitInstance.state.postBoxKey!, "hex"),
+      privKey: new BN(corekitInstance.state.postBoxKey, "hex"),
       input: { message: "KEY_NOT_FOUND" },
     });
     return { ruid, action, result: { status: corekitInstance.status, state: getPostMessageCoreKitState(corekitInstance) } };
@@ -120,6 +123,12 @@ export async function handleMPCCoreKitRequest(data: MessageRequest, corekitInsta
 
   if (action === CoreKitAction.getPubKeyEd25519) {
     const result = corekitInstance.getPubKeyEd25519();
+    return { ruid, action, result: { result, status: corekitInstance.status, state: getPostMessageCoreKitState(corekitInstance) } };
+  }
+
+  if (action === CoreKitAction._UNSAFE_recoverTssKey) {
+    const { factorKeys } = payload as { factorKeys: string[] };
+    const result = await corekitInstance._UNSAFE_recoverTssKey(factorKeys);
     return { ruid, action, result: { result, status: corekitInstance.status, state: getPostMessageCoreKitState(corekitInstance) } };
   }
 

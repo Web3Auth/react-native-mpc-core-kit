@@ -16,7 +16,7 @@ import {
 } from "@web3auth/mpc-core-kit";
 import BN from "bn.js";
 
-import { bridgeEmit, rejectMap, resolveMap, storageMap } from "./Bridge";
+import { bridgeEmit, isReadyPromise, rejectMap, resolveMap, storageMap } from "./Bridge";
 import { BrigeToWebViewMessageType, copyBuffer, CoreKitAction } from "./common";
 import { ICoreKitRN } from "./interfaces";
 
@@ -105,6 +105,11 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
   }
 
   public async init(params: InitParams = { handleRedirectResult: true }): Promise<void> {
+    const result = await isReadyPromise;
+    if (!result) {
+      throw new Error("CoreKit Bridge is not ready");
+    }
+
     if (!this.ruid) {
       const ruid = await createInstance(this.options);
       this.ruid = ruid;
@@ -199,6 +204,11 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
   public async _UNSAFE_exportTssEd25519Seed(): Promise<Buffer> {
     const buf: Buffer = await this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_exportTssEd25519Seed, {});
     return copyBuffer(buf);
+  }
+
+  public async _UNSAFE_recoverTssKey(factorKeys: string[]): Promise<string> {
+    const result = await this.genericRequestWithStateUpdate(CoreKitAction._UNSAFE_recoverTssKey, { factorKeys });
+    return result as string;
   }
 
   public async getDeviceFactor(): Promise<string> {
