@@ -125,7 +125,7 @@ function createMPCCoreKitInstance(options: Web3AuthOptions, ruid: string) {
 const Root = () => {
   useEffect(() => {
     const init = async () => {
-      debug("initialized 1111111");
+      debug("Bridge initialized - Ready");
     };
 
     // handle error
