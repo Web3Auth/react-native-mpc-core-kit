@@ -1,6 +1,7 @@
-export * from "./Bridge";
+// export * from "./Bridge";
 import { KeyType } from "@tkey/common-types";
-import {
+export { KeyType, Point, secp256k1 } from "@tkey/common-types";
+export {
   COREKIT_STATUS,
   FactorKeyTypeShareDescription,
   generateFactorKey,
@@ -24,18 +25,9 @@ const TssDklsLib = {
   lib: {},
 };
 
-export {
-  COREKIT_STATUS,
-  FactorKeyTypeShareDescription,
-  generateFactorKey,
-  keyToMnemonic,
-  makeEthereumSigner,
-  mnemonicToKey,
-  parseToken,
-  TssShareType,
-  WEB3AUTH_NETWORK,
-};
-
+export { Bridge } from "./Bridge";
+export { Web3AuthMPCCoreKitRN } from "./mpclib";
+export type { JWTLoginParams } from "@web3auth/mpc-core-kit";
 export { mpclib, TssDklsLib, TssFrostLib };
 export default mpclib;
 // IMP START - Quick Start

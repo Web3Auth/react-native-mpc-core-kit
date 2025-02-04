@@ -1,3 +1,4 @@
+import { Point } from "@tkey/common-types";
 import { Web3AuthMPCCoreKit, Web3AuthState } from "@web3auth/mpc-core-kit";
 import { BN } from "bn.js";
 
@@ -39,7 +40,8 @@ export async function handleMPCCoreKitRequest(data: MessageRequest, corekitInsta
   }
   if (action === CoreKitAction.deleteFactor) {
     const { factorPub, factorKey } = payload;
-    await corekitInstance.deleteFactor(factorPub, factorKey);
+
+    await corekitInstance.deleteFactor(Point.fromJSON(factorPub), factorKey ? new BN(factorKey, "hex") : undefined);
     return { ruid, action, result: { status: corekitInstance.status, state: getPostMessageCoreKitState(corekitInstance) } };
   }
   if (action === CoreKitAction.enableMFA) {
