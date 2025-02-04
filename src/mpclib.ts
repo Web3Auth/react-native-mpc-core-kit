@@ -1,4 +1,4 @@
-import { KeyType, Point } from "@tkey/common-types";
+import { BNString, KeyType, Point } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import {
   COREKIT_STATUS,
@@ -68,6 +68,12 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
       // TODO: use CoreKitError class once its exported from @web3auth/mpc-core-kit
       throw new Error("web3AuthClientId is required");
     }
+    if (options.uxMode) {
+      if (options.uxMode !== "react-native") {
+        throw new Error("Only react-native mode is supported");
+      }
+    }
+    options.uxMode = "react-native";
     this.options = options;
     this.keyType = options.tssLib.keyType as KeyType;
     this._status = COREKIT_STATUS.NOT_INITIALIZED;
@@ -104,7 +110,7 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
     return result.result;
   }
 
-  public async init(params: InitParams = { handleRedirectResult: true }): Promise<void> {
+  public async init(params: Omit<InitParams, "handleRedirectResult"> = {}): Promise<void> {
     if (!this.ruid) {
       const ruid = await createInstance(this.options);
       this.ruid = ruid;
@@ -139,8 +145,8 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
     });
   }
 
-  public async deleteFactor(factorPub: Point): Promise<void> {
-    return this.genericRequestWithStateUpdate(CoreKitAction.deleteFactor, { factorPub });
+  public async deleteFactor(factorPub: Point, factorKey?: BNString): Promise<void> {
+    return this.genericRequestWithStateUpdate(CoreKitAction.deleteFactor, { factorPub: factorPub.toJSON(), factorKey: factorKey?.toString("hex") });
   }
 
   public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor = true): Promise<string> {
