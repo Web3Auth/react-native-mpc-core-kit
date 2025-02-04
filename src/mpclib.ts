@@ -110,7 +110,7 @@ export class Web3AuthMPCCoreKitRN implements ICoreKitRN, CoreKitSigner {
     return result.result;
   }
 
-  public async init(params: InitParams = { handleRedirectResult: true }): Promise<void> {
+  public async init(params: Omit<InitParams, "handleRedirectResult"> = {}): Promise<void> {
     if (!this.ruid) {
       const ruid = await createInstance(this.options);
       this.ruid = ruid;
